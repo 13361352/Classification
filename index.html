@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>小鎮漢堡大廚 | Cooking Game</title>
+  <title>小鎮漢堡大廚 2.0 | Cooking Game</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
     body {
       background-color: #1e1b2e;
       color: #ffffff;
@@ -13,14 +13,24 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      overflow: hidden;
+      min-height: 100vh;
+      padding: 10px;
+      touch-action: manipulation;
+    }
+    #main-wrapper {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      align-items: stretch;
+      justify-content: center;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 780px;
     }
     #game-board {
       width: 100%;
-      max-width: 440px;
-      height: 100vh;
-      max-height: 760px;
+      max-width: 460px;
+      height: 760px;
       background: #2b2640;
       border: 3px solid #ff9f1c;
       border-radius: 16px;
@@ -31,96 +41,163 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.6);
       overflow: hidden;
     }
+
+    /* 右側食譜提示框 */
+    #recipe-sidebar {
+      width: 280px;
+      background: #231f35;
+      border: 3px solid #2ec4b6;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      max-height: 760px;
+    }
+    #recipe-sidebar h2 {
+      font-size: 17px;
+      color: #2ec4b6;
+      text-align: center;
+      padding-bottom: 8px;
+      border-bottom: 2px dashed #4a406e;
+      margin-bottom: 8px;
+    }
+    .recipe-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+      flex: 1;
+      padding-right: 4px;
+    }
+    .recipe-item {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 6px 9px;
+      border-left: 4px solid #ff9f1c;
+    }
+    .recipe-title {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: bold;
+      color: #ffbf69;
+      margin-bottom: 2px;
+    }
+    .recipe-formula {
+      font-size: 12px;
+      color: #e2e8f0;
+    }
+    .tips-box {
+      margin-top: 10px;
+      background: rgba(46, 196, 182, 0.14);
+      border: 1px solid #2ec4b6;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
     /* 頂部資訊列 */
     #top-bar {
       background: #181526;
-      padding: 12px 18px;
+      padding: 10px 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 17px;
+      font-size: 14px;
       font-weight: bold;
       border-bottom: 2px solid #ff9f1c;
     }
     .stat-box span { color: #ffbf69; }
-    
+    .mini-rank-btn {
+      background: #2b2640;
+      color: #ffbf69;
+      border: 1px solid #ff9f1c;
+      border-radius: 12px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
     /* 客人區 */
     #customers-area {
       display: flex;
       justify-content: space-around;
       align-items: flex-end;
-      height: 210px;
-      padding: 10px;
+      height: 195px;
+      padding: 8px;
       background: linear-gradient(180deg, #3a3256 0%, #2b2640 100%);
       border-bottom: 4px solid #4a406e;
     }
     .customer-slot {
-      width: 31%;
-      height: 185px;
+      width: 31.5%;
+      height: 175px;
       background: rgba(255, 255, 255, 0.06);
       border-radius: 12px;
-      padding: 8px;
+      padding: 6px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
       cursor: pointer;
-      transition: transform 0.1s, border-color 0.2s;
+      transition: transform 0.1s, border-color 0.2s, background 0.2s;
       border: 2px solid transparent;
     }
-    .customer-slot.active:hover {
+    .customer-slot.active:hover, .customer-slot.drag-over {
       transform: scale(1.03);
       border-color: #2ec4b6;
-      background: rgba(46, 196, 182, 0.15);
+      background: rgba(46, 196, 182, 0.2);
     }
     .order-bubble {
       background: #ffffff;
       color: #1e1b2e;
       border-radius: 10px;
-      padding: 6px;
+      padding: 5px;
       width: 100%;
       min-height: 68px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: bold;
       box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-      gap: 3px;
+      gap: 2px;
+      text-align: center;
+      line-height: 1.25;
     }
-    .customer-avatar { font-size: 46px; line-height: 1; }
+    .customer-avatar { font-size: 42px; line-height: 1; pointer-events: none; }
     .patience-bar {
       width: 100%;
-      height: 8px;
+      height: 7px;
       background: #181526;
       border-radius: 4px;
       overflow: hidden;
     }
-    .patience-fill {
-      height: 100%;
-      background: #2ec4b6;
-      width: 100%;
-      transition: width 0.2s linear, background-color 0.3s;
-    }
+    .patience-fill { height: 100%; background: #2ec4b6; width: 100%; transition: width 0.2s linear; }
 
-    /* 料理台（煎鍋 + 餐盤） */
+    /* 料理台區（設備列 + 組裝托盤列） */
     #counter-area {
-      padding: 12px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       background: #231f35;
+      flex: 1;
+      justify-content: center;
     }
     .station-row {
       display: flex;
-      justify-content: space-around;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
-    .grill-pan, .plate-slot, .drink-slot {
+    .station-box {
       flex: 1;
-      height: 85px;
+      height: 84px;
       background: #161321;
       border: 2px dashed #5c5285;
       border-radius: 12px;
@@ -130,36 +207,68 @@
       justify-content: center;
       cursor: pointer;
       position: relative;
+      padding: 4px;
+      transition: border-color 0.15s, transform 0.1s;
     }
-    .plate-slot { background: #2f2a47; border-style: solid; border-color: #7b6fa8; }
-    .drink-slot { background: #1c2e3d; border-style: solid; border-color: #2ec4b6; }
-    .item-icon { font-size: 32px; }
-    .item-label { font-size: 11px; color: #cbd5e1; margin-top: 2px; text-align: center; }
+    .station-box.ready-drag {
+      border-style: solid;
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, 0.12);
+      cursor: grab;
+    }
+    .station-box.ready-drag:active { cursor: grabbing; }
+    .fryer-box { border-color: #eab308; background: #1f1c14; }
+    .drink-box { border-style: solid; border-color: #2ec4b6; background: #152530; }
+    .ice-box { border-style: solid; border-color: #f472b6; background: #291827; }
+
+    .plate-slot {
+      flex: 1;
+      height: 88px;
+      background: #2f2a47;
+      border: 2px solid #7b6fa8;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s;
+    }
+    .plate-slot.drag-over {
+      border-color: #22c55e !important;
+      background: rgba(34, 197, 94, 0.25) !important;
+      transform: scale(1.04);
+    }
+
+    .item-icon { font-size: 28px; pointer-events: none; }
+    .item-label { font-size: 11px; color: #cbd5e1; margin-top: 2px; text-align: center; pointer-events: none; line-height: 1.2; }
     .cook-progress {
       position: absolute;
-      bottom: 6px;
-      width: 80%;
-      height: 6px;
+      bottom: 5px;
+      width: 82%;
+      height: 5px;
       background: #333;
       border-radius: 3px;
       overflow: hidden;
+      pointer-events: none;
     }
     .cook-fill { height: 100%; width: 0%; background: #ff9f1c; }
 
-    /* 底部食材櫃 */
+    /* 底部食材櫃（2排共8個按鍵） */
     #ingredients-area {
       background: #181526;
-      padding: 12px 10px 18px;
+      padding: 10px;
       border-top: 2px solid #ff9f1c;
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 6px;
     }
     .ing-btn {
       background: #2b2640;
       border: 2px solid #ff9f1c;
       border-radius: 10px;
-      padding: 8px 2px;
+      padding: 6px 2px;
       color: white;
       display: flex;
       flex-direction: column;
@@ -168,42 +277,163 @@
       transition: transform 0.08s;
     }
     .ing-btn:active { transform: scale(0.92); }
+    .ing-btn.side-btn { border-color: #2ec4b6; background: #1c2e38; }
     .ing-btn.trash { border-color: #e71d36; background: #3b1822; }
-    .ing-btn span:first-child { font-size: 26px; }
-    .ing-btn span:last-child { font-size: 11px; margin-top: 3px; font-weight: bold; }
+    .ing-btn span:first-child { font-size: 22px; }
+    .ing-btn span:last-child { font-size: 11px; margin-top: 2px; font-weight: bold; }
 
-    /* 覆蓋層（開始與結算） */
+    /* 拖曳跟隨圖示（支援手機與滑鼠視覺回饋） */
+    #drag-ghost {
+      position: fixed;
+      pointer-events: none;
+      font-size: 38px;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      display: none;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
+    }
+
+    /* 覆蓋層與排行榜視窗 */
     #overlay {
       position: absolute;
       inset: 0;
-      background: rgba(24, 21, 38, 0.94);
+      background: rgba(24, 21, 38, 0.96);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 24px;
+      padding: 20px;
       z-index: 10;
     }
-    #overlay h1 { font-size: 28px; color: #ff9f1c; margin-bottom: 12px; }
-    #overlay p { font-size: 14px; color: #e2e8f0; line-height: 1.6; margin-bottom: 20px; }
+    #overlay h1 { font-size: 26px; color: #ff9f1c; margin-bottom: 8px; }
+    #overlay p { font-size: 13px; color: #e2e8f0; line-height: 1.5; margin-bottom: 14px; }
+    #chefNameInput {
+      width: 220px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      border-radius: 20px;
+      border: 2px solid #ff9f1c;
+      background: #12101d;
+      color: #ffffff;
+      font-size: 15px;
+      text-align: center;
+      outline: none;
+    }
+    .btn-group { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     #startBtn {
       background: #ff9f1c;
       color: #181526;
       border: none;
-      padding: 12px 34px;
-      font-size: 18px;
+      padding: 11px 28px;
+      font-size: 16px;
       font-weight: bold;
       border-radius: 25px;
       cursor: pointer;
       box-shadow: 0 4px 15px rgba(255, 159, 28, 0.5);
     }
+    #allRankBtn {
+      background: #2ec4b6;
+      color: #181526;
+      border: none;
+      padding: 11px 20px;
+      font-size: 15px;
+      font-weight: bold;
+      border-radius: 25px;
+      cursor: pointer;
+    }
+    #leaderboard {
+      width: 270px;
+      margin-top: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 159, 28, 0.4);
+      border-radius: 12px;
+      padding: 10px 14px;
+      text-align: left;
+    }
+    #leaderboard h3 { font-size: 14px; color: #ffbf69; text-align: center; margin-bottom: 8px; }
+    #leaderboard ol { list-style: none; font-size: 13px; color: #e2e8f0; }
+    #leaderboard li {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+    }
+    #leaderboard li:last-child { border-bottom: none; }
+
+    /* 完整排行榜彈出視窗 */
+    #fullRankModal {
+      position: absolute;
+      inset: 0;
+      background: rgba(18, 16, 29, 0.98);
+      display: none;
+      flex-direction: column;
+      padding: 20px;
+      z-index: 20;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #2ec4b6;
+      margin-bottom: 12px;
+    }
+    .modal-header h2 { font-size: 20px; color: #ffbf69; }
+    .close-modal-btn {
+      background: #e71d36;
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 15px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #fullRankScroll { flex: 1; overflow-y: auto; padding-right: 4px; }
+    #fullRankList { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .full-rank-item {
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 4px solid #64748b;
+    }
+    .full-rank-item.top-1 { border-left-color: #ffd700; background: rgba(255, 215, 0, 0.12); }
+    .full-rank-item.top-2 { border-left-color: #c0c0c0; background: rgba(192, 192, 192, 0.1); }
+    .full-rank-item.top-3 { border-left-color: #cd7f32; background: rgba(205, 127, 50, 0.1); }
+    .rank-left { display: flex; flex-direction: column; gap: 2px; }
+    .rank-name { font-size: 15px; font-weight: bold; color: #ffffff; }
+    .rank-date { font-size: 11px; color: #94a3b8; }
+    .rank-score { font-size: 16px; font-weight: bold; color: #ffbf69; }
+    .modal-footer {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .clear-btn {
+      background: transparent;
+      color: #f87171;
+      border: 1px solid #f87171;
+      padding: 4px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
     #toast {
       position: absolute;
-      top: 55px;
+      top: 50px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.88);
       color: #ffbf69;
       padding: 5px 14px;
       border-radius: 20px;
@@ -211,83 +441,322 @@
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.2s;
+      white-space: nowrap;
+      z-index: 15;
+    }
+    @media (max-width: 760px) {
+      #recipe-sidebar { width: 100%; max-width: 460px; max-height: none; }
     }
   </style>
 </head>
 <body>
 
-<div id="game-board">
-  <div id="top-bar">
-    <div class="stat-box">💰 營業額: $<span id="score">0</span></div>
-    <div class="stat-box">⏱️ 時間: <span id="timer">90</span>s</div>
-  </div>
+<div id="drag-ghost">🍖</div>
 
-  <div id="toast">提示訊息</div>
-
-  <!-- 客人區 -->
-  <div id="customers-area">
-    <div class="customer-slot" id="cust-0" onclick="serveCustomer(0)"></div>
-    <div class="customer-slot" id="cust-1" onclick="serveCustomer(1)"></div>
-    <div class="customer-slot" id="cust-2" onclick="serveCustomer(2)"></div>
-  </div>
-
-  <!-- 料理台 -->
-  <div id="counter-area">
-    <!-- 上排：煎鍋與飲料機 -->
-    <div class="station-row">
-      <div class="grill-pan" id="grill-0" onclick="clickGrill(0)"></div>
-      <div class="grill-pan" id="grill-1" onclick="clickGrill(1)"></div>
-      <div class="drink-slot" id="drink-station" onclick="clickDrink()"></div>
+<div id="main-wrapper">
+  <!-- 左側：主遊戲區 -->
+  <div id="game-board">
+    <div id="top-bar">
+      <div class="stat-box">👨‍🍳 <span id="displayChefName">大廚</span></div>
+      <div class="stat-box">💰 $<span id="score">0</span></div>
+      <div class="stat-box">⏱️ <span id="timer">120</span>s</div>
+      <button class="mini-rank-btn" onclick="openFullLeaderboard()">🏆 榜單</button>
     </div>
-    <!-- 下排：組裝餐盤 -->
-    <div class="station-row">
-      <div class="plate-slot" id="plate-0" onclick="selectPlate(0)"></div>
-      <div class="plate-slot" id="plate-1" onclick="selectPlate(1)"></div>
+
+    <div id="toast">提示訊息</div>
+
+    <!-- 客人區 -->
+    <div id="customers-area">
+      <div class="customer-slot" id="cust-0" data-cust="0" onclick="serveCustomer(0)"></div>
+      <div class="customer-slot" id="cust-1" data-cust="1" onclick="serveCustomer(1)"></div>
+      <div class="customer-slot" id="cust-2" data-cust="2" onclick="serveCustomer(2)"></div>
+    </div>
+
+    <!-- 料理台 -->
+    <div id="counter-area">
+      <!-- 第一排：兩個煎鍋 + 炸薯條機 -->
+      <div class="station-row">
+        <div class="station-box" id="grill-0"></div>
+        <div class="station-box" id="grill-1"></div>
+        <div class="station-box fryer-box" id="fryer-station" onclick="clickFryer()"></div>
+      </div>
+      <!-- 第二排：飲料機 + 冰淇淋機 -->
+      <div class="station-row">
+        <div class="station-box drink-box" id="drink-station" onclick="clickDrink()"></div>
+        <div class="station-box ice-box" id="ice-station" onclick="clickIceCream()"></div>
+      </div>
+      <!-- 第三排：兩個漢堡組裝托盤 -->
+      <div class="station-row">
+        <div class="plate-slot" id="plate-0" data-plate="0" onclick="selectPlate(0)"></div>
+        <div class="plate-slot" id="plate-1" data-plate="1" onclick="selectPlate(1)"></div>
+      </div>
+    </div>
+
+    <!-- 底部食材櫃 -->
+    <div id="ingredients-area">
+      <div class="ing-btn" onclick="addMeat()"><span>🥩</span><span>煎肉排</span></div>
+      <div class="ing-btn" onclick="addBun()"><span>🍞</span><span>放麵包</span></div>
+      <div class="ing-btn" onclick="addTopping('cheese')"><span>🧀</span><span>加起司</span></div>
+      <div class="ing-btn" onclick="addTopping('bacon')"><span>🥓</span><span>加培根</span></div>
+      <div class="ing-btn" onclick="addTopping('lettuce')"><span>🥬</span><span>加生菜</span></div>
+      <div class="ing-btn" onclick="addTopping('tomato')"><span>🍅</span><span>加番茄</span></div>
+      <div class="ing-btn side-btn" onclick="clickFryer()"><span>🥔</span><span>炸薯條</span></div>
+      <div class="ing-btn trash" onclick="trashSelected()"><span>🗑️</span><span>清空托盤</span></div>
+    </div>
+
+    <!-- 開始與結算覆蓋層 -->
+    <div id="overlay">
+      <h1 id="ov-title">🍔 小鎮漢堡大廚 2.0</h1>
+      <p id="ov-desc">新增炸薯條、冰淇淋、起司培根！<br>肉排熟透後可<strong>直接拖曳</strong>到有麵包的托盤上！</p>
+      <input type="text" id="chefNameInput" maxlength="10" placeholder="請輸入你的大廚暱稱">
+      <div class="btn-group">
+        <button id="startBtn" onclick="startGame()">開始營業</button>
+        <button id="allRankBtn" onclick="openFullLeaderboard()">🏆 所有玩家榜單</button>
+      </div>
+      <div id="leaderboard">
+        <h3>🔥 目前前三名大廚</h3>
+        <ol id="rankList"></ol>
+      </div>
+    </div>
+
+    <!-- 完整排行榜彈出視窗 -->
+    <div id="fullRankModal">
+      <div class="modal-header">
+        <h2>🏆 全部玩家營業額總榜</h2>
+        <button class="close-modal-btn" onclick="closeFullLeaderboard()">返回</button>
+      </div>
+      <div id="fullRankScroll">
+        <ul id="fullRankList"></ul>
+      </div>
+      <div class="modal-footer">
+        <span id="totalPlayersCount">共 0 筆紀錄</span>
+        <button class="clear-btn" onclick="clearAllRecords()">清空所有紀錄</button>
+      </div>
     </div>
   </div>
 
-  <!-- 食材櫃 -->
-  <div id="ingredients-area">
-    <div class="ing-btn" onclick="addMeat()"><span>🥩</span><span>煎肉排</span></div>
-    <div class="ing-btn" onclick="addBun()"><span>🍞</span><span>放麵包</span></div>
-    <div class="ing-btn" onclick="addTopping('lettuce')"><span>🥬</span><span>加生菜</span></div>
-    <div class="ing-btn" onclick="addTopping('tomato')"><span>🍅</span><span>加番茄</span></div>
-    <div class="ing-btn trash" onclick="trashSelected()"><span>🗑️</span><span>丟棄</span></div>
-  </div>
-
-  <div id="overlay">
-    <h1 id="ov-title">🍔 小鎮漢堡大廚</h1>
-    <p id="ov-desc">
-      1. 點「煎肉排」與「放麵包」開始備料<br>
-      2. 肉排變<b>綠色</b>時快點它裝盤，變<b>紅色</b>會燒焦！<br>
-      3. 點擊餐盤選取，加上生菜/番茄，再點客人出餐！
-    </p>
-    <button id="startBtn" onclick="startGame()">開始營業</button>
-  </div>
+  <!-- 右側：餐點食材提示框 -->
+  <aside id="recipe-sidebar">
+    <div>
+      <h2>📋 豪華菜單食譜</h2>
+      <div class="recipe-list">
+        <div class="recipe-item">
+          <div class="recipe-title"><span>單點冰可樂 / 霜淇淋</span><span>$15~$20</span></div>
+          <div class="recipe-formula">🥤 點飲料機 / 🍦 點冰淇淋機</div>
+        </div>
+        <div class="recipe-item">
+          <div class="recipe-title"><span>現炸黃金薯條</span><span>$25</span></div>
+          <div class="recipe-formula">🥔 炸薯條 → 變綠點擊裝盒 🍟</div>
+        </div>
+        <div class="recipe-item">
+          <div class="recipe-title"><span>經典肉排堡</span><span>$30</span></div>
+          <div class="recipe-formula">🍞 麵包 + 🍖 熟肉排</div>
+        </div>
+        <div class="recipe-item">
+          <div class="recipe-title"><span>起司培根堡</span><span>$45</span></div>
+          <div class="recipe-formula">🍞 + 🍖 + 🧀 起司 + 🥓 培根</div>
+        </div>
+        <div class="recipe-item">
+          <div class="recipe-title"><span>田園鮮蔬堡</span><span>$45</span></div>
+          <div class="recipe-formula">🍞 + 🍖 + 🥬 生菜 + 🍅 番茄</div>
+        </div>
+        <div class="recipe-item">
+          <div class="recipe-title"><span>美式薯條套餐</span><span>$55</span></div>
+          <div class="recipe-formula">🍔 經典肉排堡 + 🍟 炸薯條</div>
+        </div>
+        <div class="recipe-item">
+          <div class="recipe-title"><span>起司培根可樂餐</span><span>$60</span></div>
+          <div class="recipe-formula">🍔 起司培根堡 + 🥤 冰可樂</div>
+        </div>
+        <div class="recipe-item">
+          <div class="recipe-title"><span>甜蜜下午茶組</span><span>$45</span></div>
+          <div class="recipe-formula">🍟 炸薯條 + 🍦 香草霜淇淋</div>
+        </div>
+        <div class="recipe-item">
+          <div class="recipe-title"><span>無敵巨無霸全餐</span><span>$85</span></div>
+          <div class="recipe-formula">🍞+🍖+🧀+🥓+🥬+🍅 + 🍟 + 🥤</div>
+        </div>
+      </div>
+    </div>
+    <div class="tips-box">
+      🖐️ <strong>拖曳與操作技巧：</strong><br>
+      1. 肉排變<strong>綠色</strong>後，可用滑鼠或手指<strong>按住拖到托盤</strong>（或直接點擊）。<br>
+      2. 肉排熟透時間大幅延長，不用怕一秒燒焦囉！
+    </div>
+  </aside>
 </div>
 
 <script>
   let score = 0;
-  let timeLeft = 90;
+  let timeLeft = 120;
   let gameInterval = null;
   let isPlaying = false;
 
-  // 狀態資料
-  let grills = [null, null]; // { progress: 0~150 } (60~105為熟, >105燒焦)
-  let drink = { state: 'empty', progress: 0 }; // empty, filling, ready
-  let plates = [null, null]; // { bun: true, meat: false, lettuce: false, tomato: false }
+  const chefNameInput = document.getElementById('chefNameInput');
+  const displayChefName = document.getElementById('displayChefName');
+  const rankListEl = document.getElementById('rankList');
+  const fullRankModal = document.getElementById('fullRankModal');
+  const fullRankListEl = document.getElementById('fullRankList');
+  const totalPlayersCountEl = document.getElementById('totalPlayersCount');
+  const dragGhost = document.getElementById('drag-ghost');
+
+  let currentChefName = localStorage.getItem('burgerChefName') || '';
+  chefNameInput.value = currentChefName;
+  let chefLeaderboard = JSON.parse(localStorage.getItem('burgerChefAllRecords')) || [];
+
+  // 設備與食材狀態
+  // grills: progress 0~220 (50~155為熟透黃金期，大幅延長不易燒焦！>155才燒焦)
+  let grills = [null, null];
+  // fryer: state: 'empty' | 'cooking' | 'ready' | 'burnt', progress: 0~200
+  let fryer = { state: 'empty', progress: 0 };
+  let drink = { state: 'empty', progress: 0 };
+  let iceCream = { state: 'empty', progress: 0 };
+  let plates = [null, null];
   let selectedPlate = 0;
   let customers = [null, null, null];
 
+  // 自訂通用拖曳系統（同時支援滑鼠與手機觸控）
+  let dragState = null; // { type: 'grill', index: 0 } 或 { type: 'plate', index: 0 }
+
+  function startCustomDrag(e, type, index, iconChar) {
+    if (!isPlaying) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragState = { type, index, startX: clientX, startY: clientY, moved: false };
+    dragGhost.textContent = iconChar;
+  }
+
+  window.addEventListener('mousemove', handleDragMove);
+  window.addEventListener('touchmove', handleDragMove, { passive: false });
+  window.addEventListener('mouseup', handleDragEnd);
+  window.addEventListener('touchend', handleDragEnd);
+
+  function handleDragMove(e) {
+    if (!dragState) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    if (Math.hypot(clientX - dragState.startX, clientY - dragState.startY) > 10) {
+      dragState.moved = true;
+      if (e.cancelable) e.preventDefault();
+      dragGhost.style.display = 'block';
+      dragGhost.style.left = clientX + 'px';
+      dragGhost.style.top = clientY + 'px';
+
+      // 高亮目標區塊
+      document.querySelectorAll('.plate-slot, .customer-slot').forEach(el => el.classList.remove('drag-over'));
+      const targetEl = document.elementFromPoint(clientX, clientY);
+      if (targetEl) {
+        const plateEl = targetEl.closest('.plate-slot');
+        const custEl = targetEl.closest('.customer-slot');
+        if (dragState.type === 'grill' && plateEl) plateEl.classList.add('drag-over');
+        if (dragState.type === 'plate' && custEl) custEl.classList.add('drag-over');
+      }
+    }
+  }
+
+  function handleDragEnd(e) {
+    if (!dragState) return;
+    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+    document.querySelectorAll('.plate-slot, .customer-slot').forEach(el => el.classList.remove('drag-over'));
+    dragGhost.style.display = 'none';
+
+    if (dragState.moved) {
+      const targetEl = document.elementFromPoint(clientX, clientY);
+      if (targetEl) {
+        if (dragState.type === 'grill') {
+          const plateEl = targetEl.closest('.plate-slot');
+          if (plateEl) {
+            const pIdx = parseInt(plateEl.dataset.plate, 10);
+            moveMeatToSpecificPlate(dragState.index, pIdx);
+          }
+        } else if (dragState.type === 'plate') {
+          const custEl = targetEl.closest('.customer-slot');
+          if (custEl) {
+            const cIdx = parseInt(custEl.dataset.cust, 10);
+            selectedPlate = dragState.index;
+            serveCustomer(cIdx);
+          }
+        }
+      }
+    } else {
+      // 如果只是輕點沒有拖曳，執行原本的點擊快捷邏輯
+      if (dragState.type === 'grill') {
+        clickGrill(dragState.index);
+      } else if (dragState.type === 'plate') {
+        selectPlate(dragState.index);
+      }
+    }
+    dragState = null;
+  }
+
+  // 排行榜功能
+  function renderPreviewLeaderboard() {
+    const top3 = chefLeaderboard.slice(0, 3);
+    if (top3.length === 0) {
+      rankListEl.innerHTML = '<li style="justify-content:center; color:#8892b0;">尚無營業紀錄，快來挑戰！</li>';
+      return;
+    }
+    rankListEl.innerHTML = top3.map((item, idx) => `
+      <li>
+        <span>#${idx + 1} ${item.name}</span>
+        <span style="color:#ffbf69; font-weight:bold;">$${item.score}</span>
+      </li>
+    `).join('');
+  }
+
+  function openFullLeaderboard() {
+    totalPlayersCountEl.textContent = `共 ${chefLeaderboard.length} 筆挑戰紀錄`;
+    if (chefLeaderboard.length === 0) {
+      fullRankListEl.innerHTML = '<li style="text-align:center; color:#8892b0; padding:30px 0;">目前還沒有任何玩家紀錄喔！</li>';
+    } else {
+      fullRankListEl.innerHTML = chefLeaderboard.map((item, idx) => {
+        let rankBadge = `#${idx + 1}`;
+        let topClass = '';
+        if (idx === 0) { rankBadge = '🥇 第 1 名'; topClass = 'top-1'; }
+        else if (idx === 1) { rankBadge = '🥈 第 2 名'; topClass = 'top-2'; }
+        else if (idx === 2) { rankBadge = '🥉 第 3 名'; topClass = 'top-3'; }
+
+        return `
+          <li class="full-rank-item ${topClass}">
+            <div class="rank-left">
+              <span class="rank-name">${rankBadge} — ${item.name}</span>
+              <span class="rank-date">紀錄時間：${item.time || '剛剛'}</span>
+            </div>
+            <div class="rank-score">$${item.score}</div>
+          </li>
+        `;
+      }).join('');
+    }
+    fullRankModal.style.display = 'flex';
+  }
+
+  function closeFullLeaderboard() { fullRankModal.style.display = 'none'; }
+
+  function clearAllRecords() {
+    if (confirm('確定要清空所有玩家的排行榜紀錄嗎？')) {
+      chefLeaderboard = [];
+      localStorage.removeItem('burgerChefAllRecords');
+      renderPreviewLeaderboard();
+      openFullLeaderboard();
+    }
+  }
+  renderPreviewLeaderboard();
+
   const avatars = ['👩', '👨', '👧', '👦', '🧔', '👵', '👱‍♀️', '🧑'];
   const possibleOrders = [
-    { burger: { bun: true, meat: true, lettuce: false, tomato: false }, drink: false, label: '🍔 經典肉排堡', price: 30 },
-    { burger: { bun: true, meat: true, lettuce: true, tomato: false }, drink: false, label: '🍔🥬 生菜牛肉堡', price: 40 },
-    { burger: { bun: true, meat: true, lettuce: false, tomato: true }, drink: false, label: '🍔🍅 番茄牛肉堡', price: 40 },
-    { burger: { bun: true, meat: true, lettuce: true, tomato: true }, drink: false, label: '🍔🥗 總匯大漢堡', price: 50 },
-    { burger: { bun: true, meat: true, lettuce: false, tomato: false }, drink: true, label: '🍔+🥤 經典套餐', price: 45 },
-    { burger: { bun: true, meat: true, lettuce: true, tomato: true }, drink: true, label: '🍔🥗+🥤 豪華全餐', price: 65 },
-    { burger: null, drink: true, label: '🥤 單點冰可樂', price: 15 }
+    { burger: { bun: true, meat: true, cheese: false, bacon: false, lettuce: false, tomato: false }, fries: false, drink: false, ice: false, label: '🍔 經典肉排堡', price: 30 },
+    { burger: { bun: true, meat: true, cheese: true, bacon: true, lettuce: false, tomato: false }, fries: false, drink: false, ice: false, label: '🍔🧀🥓 起司培根堡', price: 45 },
+    { burger: { bun: true, meat: true, cheese: false, bacon: false, lettuce: true, tomato: true }, fries: false, drink: false, ice: false, label: '🍔🥗 田園鮮蔬堡', price: 45 },
+    { burger: { bun: true, meat: true, cheese: false, bacon: false, lettuce: false, tomato: false }, fries: true, drink: false, ice: false, label: '🍔+🍟 美式薯條餐', price: 55 },
+    { burger: { bun: true, meat: true, cheese: true, bacon: true, lettuce: false, tomato: false }, fries: false, drink: true, ice: false, label: '🍔🧀🥓+🥤 培根可樂餐', price: 60 },
+    { burger: { bun: true, meat: true, cheese: true, bacon: true, lettuce: true, tomato: true }, fries: true, drink: true, ice: false, label: '🍔👑+🍟+🥤 巨無霸全餐', price: 85 },
+    { burger: null, fries: true, drink: false, ice: false, label: '🍟 單點炸薯條', price: 25 },
+    { burger: null, fries: false, drink: true, ice: false, label: '🥤 單點冰可樂', price: 15 },
+    { burger: null, fries: false, drink: false, ice: true, label: '🍦 香草霜淇淋', price: 20 },
+    { burger: null, fries: true, drink: false, ice: true, label: '🍟+🍦 甜蜜下午茶', price: 45 }
   ];
 
   function showToast(msg) {
@@ -295,14 +764,21 @@
     t.textContent = msg;
     t.style.opacity = 1;
     clearTimeout(t.timer);
-    t.timer = setTimeout(() => { t.style.opacity = 0; }, 1200);
+    t.timer = setTimeout(() => { t.style.opacity = 0; }, 1300);
   }
 
   function startGame() {
+    const inputVal = chefNameInput.value.trim();
+    currentChefName = inputVal || '見習大廚';
+    localStorage.setItem('burgerChefName', currentChefName);
+    displayChefName.textContent = currentChefName;
+
     score = 0;
-    timeLeft = 90;
+    timeLeft = 120;
     grills = [null, null];
+    fryer = { state: 'empty', progress: 0 };
     drink = { state: 'empty', progress: 0 };
+    iceCream = { state: 'empty', progress: 0 };
     plates = [null, null];
     selectedPlate = 0;
     customers = [null, null, null];
@@ -322,7 +798,6 @@
   function gameTick() {
     if (!isPlaying) return;
 
-    // 倒數計時 (每5次tick = 1秒)
     timeLeft -= 0.2;
     document.getElementById('timer').textContent = Math.max(0, Math.ceil(timeLeft));
     if (timeLeft <= 0) {
@@ -330,29 +805,43 @@
       return;
     }
 
-    // 煎肉排進度
+    // 煎肉排速度調慢，熟透黃金期大幅延長 (50 ~ 155，約有 9 秒緩衝不會焦)
     for (let i = 0; i < 2; i++) {
       if (grills[i]) {
-        grills[i].progress += 3.5;
+        grills[i].progress += 2.2;
+      }
+    }
+
+    // 炸薯條機進度 (50 ~ 160 為炸好，超過 160 才會焦)
+    if (fryer.state === 'cooking') {
+      fryer.progress += 2.5;
+      if (fryer.progress >= 50 && fryer.progress <= 160) {
+        // 保持炸好狀態提示
+      } else if (fryer.progress > 160) {
+        fryer.state = 'burnt';
       }
     }
 
     // 飲料機進度
     if (drink.state === 'filling') {
-      drink.progress += 10;
-      if (drink.progress >= 100) {
-        drink.state = 'ready';
-      }
+      drink.progress += 12;
+      if (drink.progress >= 100) drink.state = 'ready';
     }
 
-    // 客人耐心與新客人生成
+    // 冰淇淋機進度
+    if (iceCream.state === 'filling') {
+      iceCream.progress += 12;
+      if (iceCream.progress >= 100) iceCream.state = 'ready';
+    }
+
+    // 客人耐心
     let activeCount = 0;
     for (let i = 0; i < 3; i++) {
       if (customers[i]) {
         activeCount++;
-        customers[i].patience -= 0.7;
+        customers[i].patience -= 0.55;
         if (customers[i].patience <= 0) {
-          showToast('客人等太久生氣離開了！-$10');
+          showToast('客人等太久離開了！-$10');
           score = Math.max(0, score - 10);
           document.getElementById('score').textContent = score;
           customers[i] = null;
@@ -360,7 +849,7 @@
       }
     }
 
-    if (activeCount < 3 && Math.random() < 0.12) {
+    if (activeCount < 3 && Math.random() < 0.11) {
       spawnCustomer();
     }
 
@@ -373,14 +862,10 @@
     const slot = emptySlots[Math.floor(Math.random() * emptySlots.length)];
     const order = possibleOrders[Math.floor(Math.random() * possibleOrders.length)];
     const avatar = avatars[Math.floor(Math.random() * avatars.length)];
-    customers[slot] = {
-      avatar,
-      order,
-      patience: 100
-    };
+    customers[slot] = { avatar, order, patience: 100 };
   }
 
-  // 食材操作
+  // 操作邏輯
   function addMeat() {
     const emptyGrill = grills.findIndex(g => g === null);
     if (emptyGrill === -1) {
@@ -391,28 +876,73 @@
     renderAll();
   }
 
+  function moveMeatToSpecificPlate(grillIdx, plateIdx) {
+    const g = grills[grillIdx];
+    if (!g) return;
+    if (g.progress < 50) {
+      showToast('肉排還沒熟喔！再等一下');
+      return;
+    }
+    if (g.progress > 155) {
+      showToast('這塊肉排已經燒焦了，不能放上盤子！');
+      return;
+    }
+    const p = plates[plateIdx];
+    if (!p || !p.bun) {
+      showToast('請先把麵包放在該托盤上，再拖曳肉排過去！');
+      return;
+    }
+    if (p.meat) {
+      showToast('這個漢堡已經有肉排囉！');
+      return;
+    }
+    p.meat = true;
+    selectedPlate = plateIdx;
+    grills[grillIdx] = null;
+    showToast('🍖 肉排成功放入托盤！');
+    renderAll();
+  }
+
   function clickGrill(idx) {
     const g = grills[idx];
     if (!g) return;
-    if (g.progress < 60) {
+    if (g.progress < 50) {
       showToast('肉排還沒熟喔！');
-    } else if (g.progress <= 115) {
-      // 熟了，尋找有麵包但還沒放肉的盤子
+    } else if (g.progress <= 155) {
       let target = plates.findIndex(p => p && p.bun && !p.meat);
       if (target === -1) {
-        showToast('請先放麵包在盤子上！');
+        showToast('請先放麵包在托盤上（或直接拖曳肉排到有麵包的托盤）');
         return;
       }
-      plates[target].meat = true;
-      selectedPlate = target;
-      grills[idx] = null;
-      renderAll();
+      moveMeatToSpecificPlate(idx, target);
     } else {
-      // 燒焦了，直接丟掉
       grills[idx] = null;
       score = Math.max(0, score - 5);
       document.getElementById('score').textContent = score;
-      showToast('燒焦肉排已丟棄 (-$5)');
+      showToast('已丟棄燒焦肉排 (-$5)');
+      renderAll();
+    }
+  }
+
+  function clickFryer() {
+    if (fryer.state === 'empty') {
+      fryer.state = 'cooking';
+      fryer.progress = 0;
+      renderAll();
+    } else if (fryer.state === 'cooking') {
+      if (fryer.progress < 50) {
+        showToast('薯條還在油炸中...');
+      } else if (fryer.progress <= 160) {
+        fryer.state = 'ready';
+        showToast('🍟 黃金薯條已裝盒備妥！');
+        renderAll();
+      }
+    } else if (fryer.state === 'burnt') {
+      fryer.state = 'empty';
+      fryer.progress = 0;
+      score = Math.max(0, score - 5);
+      document.getElementById('score').textContent = score;
+      showToast('已丟棄炸焦的薯條 (-$5)');
       renderAll();
     }
   }
@@ -420,10 +950,10 @@
   function addBun() {
     const emptyPlate = plates.findIndex(p => p === null);
     if (emptyPlate === -1) {
-      showToast('餐盤已經滿囉！');
+      showToast('兩個托盤都滿囉！');
       return;
     }
-    plates[emptyPlate] = { bun: true, meat: false, lettuce: false, tomato: false };
+    plates[emptyPlate] = { bun: true, meat: false, cheese: false, bacon: false, lettuce: false, tomato: false };
     selectedPlate = emptyPlate;
     renderAll();
   }
@@ -431,11 +961,11 @@
   function addTopping(type) {
     const p = plates[selectedPlate];
     if (!p) {
-      showToast('請先點選一個有麵包的餐盤！');
+      showToast('請先點選一個有麵包的托盤！');
       return;
     }
     if (p[type]) {
-      showToast('已經加過這個配料囉！');
+      showToast('這個漢堡已經加過此配料囉！');
       return;
     }
     p[type] = true;
@@ -450,7 +980,7 @@
   function trashSelected() {
     if (plates[selectedPlate]) {
       plates[selectedPlate] = null;
-      showToast('已清空餐盤');
+      showToast('已清空目前選取的托盤');
       renderAll();
     }
   }
@@ -463,7 +993,14 @@
     }
   }
 
-  // 出餐比對
+  function clickIceCream() {
+    if (iceCream.state === 'empty') {
+      iceCream.state = 'filling';
+      iceCream.progress = 0;
+      renderAll();
+    }
+  }
+
   function serveCustomer(slot) {
     const cust = customers[slot];
     if (!cust) return;
@@ -477,61 +1014,71 @@
         p &&
         p.bun === req.burger.bun &&
         p.meat === req.burger.meat &&
+        p.cheese === req.burger.cheese &&
+        p.bacon === req.burger.bacon &&
         p.lettuce === req.burger.lettuce &&
         p.tomato === req.burger.tomato
       );
       if (matchedPlateIdx === -1) burgerOk = false;
     }
 
-    let drinkOk = true;
-    if (req.drink && drink.state !== 'ready') {
-      drinkOk = false;
-    }
+    if (req.fries && fryer.state !== 'ready') burgerOk = false;
+    if (req.drink && drink.state !== 'ready') burgerOk = false;
+    if (req.ice && iceCream.state !== 'ready') burgerOk = false;
 
-    if (burgerOk && drinkOk) {
-      // 成功出餐！
+    if (burgerOk) {
       if (matchedPlateIdx !== -1) plates[matchedPlateIdx] = null;
-      if (req.drink) {
-        drink.state = 'empty';
-        drink.progress = 0;
-      }
-      const tip = Math.round((cust.patience / 100) * 10);
+      if (req.fries) { fryer.state = 'empty'; fryer.progress = 0; }
+      if (req.drink) { drink.state = 'empty'; drink.progress = 0; }
+      if (req.ice) { iceCream.state = 'empty'; iceCream.progress = 0; }
+
+      const tip = Math.round((cust.patience / 100) * 12);
       const earned = req.price + tip;
       score += earned;
       document.getElementById('score').textContent = score;
-      showToast(`完美出餐！+$${earned} (含小費 $${tip})`);
+      showToast(`完美出餐！+$${earned} (小費 $${tip})`);
       customers[slot] = null;
       renderAll();
     } else {
-      showToast('餐點還沒做好或配料不對喔！');
+      showToast('餐點還沒準備齊全或配料不符喔！');
     }
+  }
+
+  function saveToLeaderboard(name, finalScore) {
+    const now = new Date();
+    const timeStr = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    chefLeaderboard.push({ name, score: finalScore, time: timeStr });
+    chefLeaderboard.sort((a, b) => b.score - a.score);
+    localStorage.setItem('burgerChefAllRecords', JSON.stringify(chefLeaderboard));
+    renderPreviewLeaderboard();
   }
 
   function endGame() {
     isPlaying = false;
     clearInterval(gameInterval);
+    saveToLeaderboard(currentChefName, score);
+
     document.getElementById('ov-title').textContent = '⏰ 營業結束！';
-    document.getElementById('ov-desc').innerHTML = `今日總營業額：<strong>$${score}</strong><br>表現太棒了，大廚！`;
+    document.getElementById('ov-desc').innerHTML = `<strong>${currentChefName}</strong> 今日總營業額：<strong>$${score}</strong>`;
     document.getElementById('startBtn').textContent = '再玩一局';
     document.getElementById('overlay').style.display = 'flex';
   }
 
-  // 畫面渲染
   function renderAll() {
-    // 渲染客人
+    // 客人
     for (let i = 0; i < 3; i++) {
       const el = document.getElementById(`cust-${i}`);
       const c = customers[i];
       if (!c) {
         el.className = 'customer-slot';
-        el.innerHTML = '<div style="color:#64748b; font-size:13px; margin:auto;">等待客人...</div>';
+        el.innerHTML = '<div style="color:#64748b; font-size:12px; margin:auto;">等待客人...</div>';
       } else {
         el.className = 'customer-slot active';
         const barColor = c.patience > 50 ? '#2ec4b6' : (c.patience > 25 ? '#ff9f1c' : '#e71d36');
         el.innerHTML = `
           <div class="order-bubble">
             <div>${c.order.label}</div>
-            <div style="color:#d97706; font-size:12px;">$${c.order.price}</div>
+            <div style="color:#d97706; font-size:11px;">$${c.order.price}</div>
           </div>
           <div class="customer-avatar">${c.avatar}</div>
           <div class="patience-bar">
@@ -541,38 +1088,65 @@
       }
     }
 
-    // 渲染煎鍋
+    // 煎鍋（綁定拖曳與點擊）
     for (let i = 0; i < 2; i++) {
       const el = document.getElementById(`grill-${i}`);
       const g = grills[i];
+      el.onmousedown = null;
+      el.ontouchstart = null;
+      el.className = 'station-box';
+
       if (!g) {
         el.innerHTML = '<div class="item-label">空煎鍋</div>';
       } else {
         let status = '煎煮中...';
         let color = '#ff9f1c';
         let icon = '🥩';
-        if (g.progress >= 60 && g.progress <= 115) {
-          status = '熟了！快點我';
+        if (g.progress >= 50 && g.progress <= 155) {
+          status = '熟了！拖到托盤';
           color = '#22c55e';
           icon = '🍖';
-        } else if (g.progress > 115) {
-          status = '燒焦了！點我丟掉';
+          el.classList.add('ready-drag');
+        } else if (g.progress > 155) {
+          status = '燒焦了！點丟棄';
           color = '#ef4444';
           icon = '🔥';
         }
-        const pct = Math.min(100, (g.progress / 115) * 100);
+        const pct = Math.min(100, (g.progress / 155) * 100);
         el.innerHTML = `
           <div class="item-icon">${icon}</div>
           <div class="item-label" style="color:${color}; font-weight:bold;">${status}</div>
           <div class="cook-progress"><div class="cook-fill" style="width:${pct}%; background:${color};"></div></div>
         `;
+        el.onmousedown = (e) => startCustomDrag(e, 'grill', i, icon);
+        el.ontouchstart = (e) => startCustomDrag(e, 'grill', i, icon);
       }
     }
 
-    // 渲染飲料機
+    // 炸薯條機
+    const fEl = document.getElementById('fryer-station');
+    if (fryer.state === 'empty') {
+      fEl.innerHTML = '<div class="item-icon">🥔</div><div class="item-label">點我炸薯條</div>';
+    } else if (fryer.state === 'cooking') {
+      const isDone = fryer.progress >= 50;
+      const color = isDone ? '#22c55e' : '#eab308';
+      const label = isDone ? '炸好了！點裝盒' : '油炸中...';
+      const pct = Math.min(100, (fryer.progress / 160) * 100);
+      fEl.innerHTML = `
+        <div class="item-icon">${isDone ? '🍟' : '⏳'}</div>
+        <div class="item-label" style="color:${color}; font-weight:bold;">${label}</div>
+        <div class="cook-progress"><div class="cook-fill" style="width:${pct}%; background:${color};"></div></div>
+      `;
+    } else if (fryer.state === 'ready') {
+      fEl.innerHTML = '<div class="item-icon">🍟</div><div class="item-label" style="color:#22c55e; font-weight:bold;">薯條備妥！</div>';
+    } else {
+      fEl.innerHTML = '<div class="item-icon">🔥</div><div class="item-label" style="color:#ef4444; font-weight:bold;">炸焦！點丟棄</div>';
+    }
+
+    // 飲料機
     const dEl = document.getElementById('drink-station');
     if (drink.state === 'empty') {
-      dEl.innerHTML = '<div class="item-icon">🥤</div><div class="item-label">點我裝飲料</div>';
+      dEl.innerHTML = '<div class="item-icon">🥤</div><div class="item-label">點我裝可樂</div>';
     } else if (drink.state === 'filling') {
       dEl.innerHTML = `
         <div class="item-icon">⏳</div>
@@ -580,26 +1154,47 @@
         <div class="cook-progress"><div class="cook-fill" style="width:${drink.progress}%; background:#2ec4b6;"></div></div>
       `;
     } else {
-      dEl.innerHTML = '<div class="item-icon">🧋</div><div class="item-label" style="color:#2ec4b6; font-weight:bold;">飲料完成！</div>';
+      dEl.innerHTML = '<div class="item-icon">🧋</div><div class="item-label" style="color:#2ec4b6; font-weight:bold;">冰可樂完成！</div>';
     }
 
-    // 渲染餐盤
+    // 冰淇淋機
+    const iEl = document.getElementById('ice-station');
+    if (iceCream.state === 'empty') {
+      iEl.innerHTML = '<div class="item-icon">🍨</div><div class="item-label">點我擠霜淇淋</div>';
+    } else if (iceCream.state === 'filling') {
+      iEl.innerHTML = `
+        <div class="item-icon">⏳</div>
+        <div class="item-label">製作中...</div>
+        <div class="cook-progress"><div class="cook-fill" style="width:${iceCream.progress}%; background:#f472b6;"></div></div>
+      `;
+    } else {
+      iEl.innerHTML = '<div class="item-icon">🍦</div><div class="item-label" style="color:#f472b6; font-weight:bold;">霜淇淋完成！</div>';
+    }
+
+    // 組裝托盤（也支援直接拖曳給客人出餐！）
     for (let i = 0; i < 2; i++) {
       const el = document.getElementById(`plate-${i}`);
       const p = plates[i];
+      el.onmousedown = null;
+      el.ontouchstart = null;
       el.style.borderColor = (selectedPlate === i) ? '#ffbf69' : '#7b6fa8';
       el.style.boxShadow = (selectedPlate === i) ? '0 0 12px rgba(255,191,105,0.5)' : 'none';
+
       if (!p) {
-        el.innerHTML = `<div class="item-label">空餐盤 ${i + 1}</div>`;
+        el.innerHTML = `<div class="item-label">空托盤 ${i + 1}</div>`;
       } else {
         let icons = '🍞';
         if (p.meat) icons += '🍖';
+        if (p.cheese) icons += '🧀';
+        if (p.bacon) icons += '🥓';
         if (p.lettuce) icons += '🥬';
         if (p.tomato) icons += '🍅';
         el.innerHTML = `
-          <div class="item-icon" style="font-size:24px;">${icons}</div>
-          <div class="item-label">${selectedPlate === i ? '★ 目前選取' : '點我選取'}</div>
+          <div class="item-icon" style="font-size:21px;">${icons}</div>
+          <div class="item-label">${selectedPlate === i ? '★ 選取中 (可拖給客人)' : '點選取 / 拖給客人'}</div>
         `;
+        el.onmousedown = (e) => startCustomDrag(e, 'plate', i, '🍔');
+        el.ontouchstart = (e) => startCustomDrag(e, 'plate', i, '🍔');
       }
     }
   }
