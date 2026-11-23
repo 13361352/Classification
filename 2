@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>小鎮漢堡大廚 | Cooking Game</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background-color: #1e1b2e;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #game-board {
+      width: 100%;
+      max-width: 440px;
+      height: 100vh;
+      max-height: 760px;
+      background: #2b2640;
+      border: 3px solid #ff9f1c;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    /* 頂部資訊列 */
+    #top-bar {
+      background: #181526;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 17px;
+      font-weight: bold;
+      border-bottom: 2px solid #ff9f1c;
+    }
+    .stat-box span { color: #ffbf69; }
+    
+    /* 客人區 */
+    #customers-area {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      height: 210px;
+      padding: 10px;
+      background: linear-gradient(180deg, #3a3256 0%, #2b2640 100%);
+      border-bottom: 4px solid #4a406e;
+    }
+    .customer-slot {
+      width: 31%;
+      height: 185px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: transform 0.1s, border-color 0.2s;
+      border: 2px solid transparent;
+    }
+    .customer-slot.active:hover {
+      transform: scale(1.03);
+      border-color: #2ec4b6;
+      background: rgba(46, 196, 182, 0.15);
+    }
+    .order-bubble {
+      background: #ffffff;
+      color: #1e1b2e;
+      border-radius: 10px;
+      padding: 6px;
+      width: 100%;
+      min-height: 68px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: bold;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+      gap: 3px;
+    }
+    .customer-avatar { font-size: 46px; line-height: 1; }
+    .patience-bar {
+      width: 100%;
+      height: 8px;
+      background: #181526;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .patience-fill {
+      height: 100%;
+      background: #2ec4b6;
+      width: 100%;
+      transition: width 0.2s linear, background-color 0.3s;
+    }
+
+    /* 料理台（煎鍋 + 餐盤） */
+    #counter-area {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #231f35;
+    }
+    .station-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      gap: 8px;
+    }
+    .grill-pan, .plate-slot, .drink-slot {
+      flex: 1;
+      height: 85px;
+      background: #161321;
+      border: 2px dashed #5c5285;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+    }
+    .plate-slot { background: #2f2a47; border-style: solid; border-color: #7b6fa8; }
+    .drink-slot { background: #1c2e3d; border-style: solid; border-color: #2ec4b6; }
+    .item-icon { font-size: 32px; }
+    .item-label { font-size: 11px; color: #cbd5e1; margin-top: 2px; text-align: center; }
+    .cook-progress {
+      position: absolute;
+      bottom: 6px;
+      width: 80%;
+      height: 6px;
+      background: #333;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .cook-fill { height: 100%; width: 0%; background: #ff9f1c; }
+
+    /* 底部食材櫃 */
+    #ingredients-area {
+      background: #181526;
+      padding: 12px 10px 18px;
+      border-top: 2px solid #ff9f1c;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+    .ing-btn {
+      background: #2b2640;
+      border: 2px solid #ff9f1c;
+      border-radius: 10px;
+      padding: 8px 2px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.08s;
+    }
+    .ing-btn:active { transform: scale(0.92); }
+    .ing-btn.trash { border-color: #e71d36; background: #3b1822; }
+    .ing-btn span:first-child { font-size: 26px; }
+    .ing-btn span:last-child { font-size: 11px; margin-top: 3px; font-weight: bold; }
+
+    /* 覆蓋層（開始與結算） */
+    #overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(24, 21, 38, 0.94);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 10;
+    }
+    #overlay h1 { font-size: 28px; color: #ff9f1c; margin-bottom: 12px; }
+    #overlay p { font-size: 14px; color: #e2e8f0; line-height: 1.6; margin-bottom: 20px; }
+    #startBtn {
+      background: #ff9f1c;
+      color: #181526;
+      border: none;
+      padding: 12px 34px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255, 159, 28, 0.5);
+    }
+    #toast {
+      position: absolute;
+      top: 55px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: #ffbf69;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-board">
+  <div id="top-bar">
+    <div class="stat-box">💰 營業額: $<span id="score">0</span></div>
+    <div class="stat-box">⏱️ 時間: <span id="timer">90</span>s</div>
+  </div>
+
+  <div id="toast">提示訊息</div>
+
+  <!-- 客人區 -->
+  <div id="customers-area">
+    <div class="customer-slot" id="cust-0" onclick="serveCustomer(0)"></div>
+    <div class="customer-slot" id="cust-1" onclick="serveCustomer(1)"></div>
+    <div class="customer-slot" id="cust-2" onclick="serveCustomer(2)"></div>
+  </div>
+
+  <!-- 料理台 -->
+  <div id="counter-area">
+    <!-- 上排：煎鍋與飲料機 -->
+    <div class="station-row">
+      <div class="grill-pan" id="grill-0" onclick="clickGrill(0)"></div>
+      <div class="grill-pan" id="grill-1" onclick="clickGrill(1)"></div>
+      <div class="drink-slot" id="drink-station" onclick="clickDrink()"></div>
+    </div>
+    <!-- 下排：組裝餐盤 -->
+    <div class="station-row">
+      <div class="plate-slot" id="plate-0" onclick="selectPlate(0)"></div>
+      <div class="plate-slot" id="plate-1" onclick="selectPlate(1)"></div>
+    </div>
+  </div>
+
+  <!-- 食材櫃 -->
+  <div id="ingredients-area">
+    <div class="ing-btn" onclick="addMeat()"><span>🥩</span><span>煎肉排</span></div>
+    <div class="ing-btn" onclick="addBun()"><span>🍞</span><span>放麵包</span></div>
+    <div class="ing-btn" onclick="addTopping('lettuce')"><span>🥬</span><span>加生菜</span></div>
+    <div class="ing-btn" onclick="addTopping('tomato')"><span>🍅</span><span>加番茄</span></div>
+    <div class="ing-btn trash" onclick="trashSelected()"><span>🗑️</span><span>丟棄</span></div>
+  </div>
+
+  <div id="overlay">
+    <h1 id="ov-title">🍔 小鎮漢堡大廚</h1>
+    <p id="ov-desc">
+      1. 點「煎肉排」與「放麵包」開始備料<br>
+      2. 肉排變<b>綠色</b>時快點它裝盤，變<b>紅色</b>會燒焦！<br>
+      3. 點擊餐盤選取，加上生菜/番茄，再點客人出餐！
+    </p>
+    <button id="startBtn" onclick="startGame()">開始營業</button>
+  </div>
+</div>
+
+<script>
+  let score = 0;
+  let timeLeft = 90;
+  let gameInterval = null;
+  let isPlaying = false;
+
+  // 狀態資料
+  let grills = [null, null]; // { progress: 0~150 } (60~105為熟, >105燒焦)
+  let drink = { state: 'empty', progress: 0 }; // empty, filling, ready
+  let plates = [null, null]; // { bun: true, meat: false, lettuce: false, tomato: false }
+  let selectedPlate = 0;
+  let customers = [null, null, null];
+
+  const avatars = ['👩', '👨', '👧', '👦', '🧔', '👵', '👱‍♀️', '🧑'];
+  const possibleOrders = [
+    { burger: { bun: true, meat: true, lettuce: false, tomato: false }, drink: false, label: '🍔 經典肉排堡', price: 30 },
+    { burger: { bun: true, meat: true, lettuce: true, tomato: false }, drink: false, label: '🍔🥬 生菜牛肉堡', price: 40 },
+    { burger: { bun: true, meat: true, lettuce: false, tomato: true }, drink: false, label: '🍔🍅 番茄牛肉堡', price: 40 },
+    { burger: { bun: true, meat: true, lettuce: true, tomato: true }, drink: false, label: '🍔🥗 總匯大漢堡', price: 50 },
+    { burger: { bun: true, meat: true, lettuce: false, tomato: false }, drink: true, label: '🍔+🥤 經典套餐', price: 45 },
+    { burger: { bun: true, meat: true, lettuce: true, tomato: true }, drink: true, label: '🍔🥗+🥤 豪華全餐', price: 65 },
+    { burger: null, drink: true, label: '🥤 單點冰可樂', price: 15 }
+  ];
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.opacity = 1;
+    clearTimeout(t.timer);
+    t.timer = setTimeout(() => { t.style.opacity = 0; }, 1200);
+  }
+
+  function startGame() {
+    score = 0;
+    timeLeft = 90;
+    grills = [null, null];
+    drink = { state: 'empty', progress: 0 };
+    plates = [null, null];
+    selectedPlate = 0;
+    customers = [null, null, null];
+    isPlaying = true;
+
+    document.getElementById('score').textContent = score;
+    document.getElementById('timer').textContent = timeLeft;
+    document.getElementById('overlay').style.display = 'none';
+
+    spawnCustomer();
+    renderAll();
+
+    clearInterval(gameInterval);
+    gameInterval = setInterval(gameTick, 200);
+  }
+
+  function gameTick() {
+    if (!isPlaying) return;
+
+    // 倒數計時 (每5次tick = 1秒)
+    timeLeft -= 0.2;
+    document.getElementById('timer').textContent = Math.max(0, Math.ceil(timeLeft));
+    if (timeLeft <= 0) {
+      endGame();
+      return;
+    }
+
+    // 煎肉排進度
+    for (let i = 0; i < 2; i++) {
+      if (grills[i]) {
+        grills[i].progress += 3.5;
+      }
+    }
+
+    // 飲料機進度
+    if (drink.state === 'filling') {
+      drink.progress += 10;
+      if (drink.progress >= 100) {
+        drink.state = 'ready';
+      }
+    }
+
+    // 客人耐心與新客人生成
+    let activeCount = 0;
+    for (let i = 0; i < 3; i++) {
+      if (customers[i]) {
+        activeCount++;
+        customers[i].patience -= 0.7;
+        if (customers[i].patience <= 0) {
+          showToast('客人等太久生氣離開了！-$10');
+          score = Math.max(0, score - 10);
+          document.getElementById('score').textContent = score;
+          customers[i] = null;
+        }
+      }
+    }
+
+    if (activeCount < 3 && Math.random() < 0.12) {
+      spawnCustomer();
+    }
+
+    renderAll();
+  }
+
+  function spawnCustomer() {
+    const emptySlots = [0, 1, 2].filter(i => customers[i] === null);
+    if (emptySlots.length === 0) return;
+    const slot = emptySlots[Math.floor(Math.random() * emptySlots.length)];
+    const order = possibleOrders[Math.floor(Math.random() * possibleOrders.length)];
+    const avatar = avatars[Math.floor(Math.random() * avatars.length)];
+    customers[slot] = {
+      avatar,
+      order,
+      patience: 100
+    };
+  }
+
+  // 食材操作
+  function addMeat() {
+    const emptyGrill = grills.findIndex(g => g === null);
+    if (emptyGrill === -1) {
+      showToast('煎鍋已經滿囉！');
+      return;
+    }
+    grills[emptyGrill] = { progress: 0 };
+    renderAll();
+  }
+
+  function clickGrill(idx) {
+    const g = grills[idx];
+    if (!g) return;
+    if (g.progress < 60) {
+      showToast('肉排還沒熟喔！');
+    } else if (g.progress <= 115) {
+      // 熟了，尋找有麵包但還沒放肉的盤子
+      let target = plates.findIndex(p => p && p.bun && !p.meat);
+      if (target === -1) {
+        showToast('請先放麵包在盤子上！');
+        return;
+      }
+      plates[target].meat = true;
+      selectedPlate = target;
+      grills[idx] = null;
+      renderAll();
+    } else {
+      // 燒焦了，直接丟掉
+      grills[idx] = null;
+      score = Math.max(0, score - 5);
+      document.getElementById('score').textContent = score;
+      showToast('燒焦肉排已丟棄 (-$5)');
+      renderAll();
+    }
+  }
+
+  function addBun() {
+    const emptyPlate = plates.findIndex(p => p === null);
+    if (emptyPlate === -1) {
+      showToast('餐盤已經滿囉！');
+      return;
+    }
+    plates[emptyPlate] = { bun: true, meat: false, lettuce: false, tomato: false };
+    selectedPlate = emptyPlate;
+    renderAll();
+  }
+
+  function addTopping(type) {
+    const p = plates[selectedPlate];
+    if (!p) {
+      showToast('請先點選一個有麵包的餐盤！');
+      return;
+    }
+    if (p[type]) {
+      showToast('已經加過這個配料囉！');
+      return;
+    }
+    p[type] = true;
+    renderAll();
+  }
+
+  function selectPlate(idx) {
+    selectedPlate = idx;
+    renderAll();
+  }
+
+  function trashSelected() {
+    if (plates[selectedPlate]) {
+      plates[selectedPlate] = null;
+      showToast('已清空餐盤');
+      renderAll();
+    }
+  }
+
+  function clickDrink() {
+    if (drink.state === 'empty') {
+      drink.state = 'filling';
+      drink.progress = 0;
+      renderAll();
+    }
+  }
+
+  // 出餐比對
+  function serveCustomer(slot) {
+    const cust = customers[slot];
+    if (!cust) return;
+    const req = cust.order;
+
+    let burgerOk = true;
+    let matchedPlateIdx = -1;
+
+    if (req.burger) {
+      matchedPlateIdx = plates.findIndex(p =>
+        p &&
+        p.bun === req.burger.bun &&
+        p.meat === req.burger.meat &&
+        p.lettuce === req.burger.lettuce &&
+        p.tomato === req.burger.tomato
+      );
+      if (matchedPlateIdx === -1) burgerOk = false;
+    }
+
+    let drinkOk = true;
+    if (req.drink && drink.state !== 'ready') {
+      drinkOk = false;
+    }
+
+    if (burgerOk && drinkOk) {
+      // 成功出餐！
+      if (matchedPlateIdx !== -1) plates[matchedPlateIdx] = null;
+      if (req.drink) {
+        drink.state = 'empty';
+        drink.progress = 0;
+      }
+      const tip = Math.round((cust.patience / 100) * 10);
+      const earned = req.price + tip;
+      score += earned;
+      document.getElementById('score').textContent = score;
+      showToast(`完美出餐！+$${earned} (含小費 $${tip})`);
+      customers[slot] = null;
+      renderAll();
+    } else {
+      showToast('餐點還沒做好或配料不對喔！');
+    }
+  }
+
+  function endGame() {
+    isPlaying = false;
+    clearInterval(gameInterval);
+    document.getElementById('ov-title').textContent = '⏰ 營業結束！';
+    document.getElementById('ov-desc').innerHTML = `今日總營業額：<strong>$${score}</strong><br>表現太棒了，大廚！`;
+    document.getElementById('startBtn').textContent = '再玩一局';
+    document.getElementById('overlay').style.display = 'flex';
+  }
+
+  // 畫面渲染
+  function renderAll() {
+    // 渲染客人
+    for (let i = 0; i < 3; i++) {
+      const el = document.getElementById(`cust-${i}`);
+      const c = customers[i];
+      if (!c) {
+        el.className = 'customer-slot';
+        el.innerHTML = '<div style="color:#64748b; font-size:13px; margin:auto;">等待客人...</div>';
+      } else {
+        el.className = 'customer-slot active';
+        const barColor = c.patience > 50 ? '#2ec4b6' : (c.patience > 25 ? '#ff9f1c' : '#e71d36');
+        el.innerHTML = `
+          <div class="order-bubble">
+            <div>${c.order.label}</div>
+            <div style="color:#d97706; font-size:12px;">$${c.order.price}</div>
+          </div>
+          <div class="customer-avatar">${c.avatar}</div>
+          <div class="patience-bar">
+            <div class="patience-fill" style="width:${c.patience}%; background:${barColor};"></div>
+          </div>
+        `;
+      }
+    }
+
+    // 渲染煎鍋
+    for (let i = 0; i < 2; i++) {
+      const el = document.getElementById(`grill-${i}`);
+      const g = grills[i];
+      if (!g) {
+        el.innerHTML = '<div class="item-label">空煎鍋</div>';
+      } else {
+        let status = '煎煮中...';
+        let color = '#ff9f1c';
+        let icon = '🥩';
+        if (g.progress >= 60 && g.progress <= 115) {
+          status = '熟了！快點我';
+          color = '#22c55e';
+          icon = '🍖';
+        } else if (g.progress > 115) {
+          status = '燒焦了！點我丟掉';
+          color = '#ef4444';
+          icon = '🔥';
+        }
+        const pct = Math.min(100, (g.progress / 115) * 100);
+        el.innerHTML = `
+          <div class="item-icon">${icon}</div>
+          <div class="item-label" style="color:${color}; font-weight:bold;">${status}</div>
+          <div class="cook-progress"><div class="cook-fill" style="width:${pct}%; background:${color};"></div></div>
+        `;
+      }
+    }
+
+    // 渲染飲料機
+    const dEl = document.getElementById('drink-station');
+    if (drink.state === 'empty') {
+      dEl.innerHTML = '<div class="item-icon">🥤</div><div class="item-label">點我裝飲料</div>';
+    } else if (drink.state === 'filling') {
+      dEl.innerHTML = `
+        <div class="item-icon">⏳</div>
+        <div class="item-label">裝杯中...</div>
+        <div class="cook-progress"><div class="cook-fill" style="width:${drink.progress}%; background:#2ec4b6;"></div></div>
+      `;
+    } else {
+      dEl.innerHTML = '<div class="item-icon">🧋</div><div class="item-label" style="color:#2ec4b6; font-weight:bold;">飲料完成！</div>';
+    }
+
+    // 渲染餐盤
+    for (let i = 0; i < 2; i++) {
+      const el = document.getElementById(`plate-${i}`);
+      const p = plates[i];
+      el.style.borderColor = (selectedPlate === i) ? '#ffbf69' : '#7b6fa8';
+      el.style.boxShadow = (selectedPlate === i) ? '0 0 12px rgba(255,191,105,0.5)' : 'none';
+      if (!p) {
+        el.innerHTML = `<div class="item-label">空餐盤 ${i + 1}</div>`;
+      } else {
+        let icons = '🍞';
+        if (p.meat) icons += '🍖';
+        if (p.lettuce) icons += '🥬';
+        if (p.tomato) icons += '🍅';
+        el.innerHTML = `
+          <div class="item-icon" style="font-size:24px;">${icons}</div>
+          <div class="item-label">${selectedPlate === i ? '★ 目前選取' : '點我選取'}</div>
+        `;
+      }
+    }
+  }
+</script>
+</body>
+</html>
